@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme {
+  /* ---- Palette: "network console" theme ----
+     Sidebar: deep ink-indigo. Canvas: cool paper white.
+     Accent: signal violet (own messages / primary actions).
+     Live: amber for online/presence pulses. */
+  --color-ink-950: #14131f;
+  --color-ink-900: #1b1a2b;
+  --color-ink-800: #262439;
+  --color-ink-700: #34314c;
+  --color-ink-600: #46436a;
+
+  --color-paper-50: #f7f7fb;
+  --color-paper-100: #eeeef4;
+  --color-paper-200: #dedee8;
+
+  --color-signal-500: #7c5cfc;
+  --color-signal-600: #6a45f7;
+  --color-signal-100: #ece7ff;
+
+  --color-live-400: #ffb020;
+  --color-live-500: #ff9d00;
+
+  --color-danger-500: #ef4444;
+
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-paper-50);
+  color: var(--color-ink-900);
+}
+
+/* subtle scrollbar, matches the console feel without being loud */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-paper-200) transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--color-paper-200);
+  border-radius: 999px;
+}
+
+@keyframes pulse-live {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.animate-pulse-live {
+  animation: pulse-live 1.6s ease-in-out infinite;
+}
