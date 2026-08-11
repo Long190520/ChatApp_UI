@@ -1,5 +1,9 @@
 import * as signalR from "@microsoft/signalr";
-import type { MessageDto, OnlineStatusEvent, SendMessageRequest } from "../types/chat.types";
+import type {
+  MessageDto,
+  OnlineStatusEvent,
+  SendMessageRequest,
+} from "../types/chat.types";
 
 /**
  * ==========================================================================
@@ -32,6 +36,7 @@ type ConnectionStateHandler = (state: signalR.HubConnectionState) => void;
 
 class SignalRService {
   private connection: signalR.HubConnection | null = null;
+  private stateHandler: ConnectionStateHandler | null = null;
 
   /**
    * TODO 1 — Khởi tạo kết nối
@@ -58,7 +63,28 @@ class SignalRService {
    *      trên biết mà cập nhật ConnectionStatus = "disconnected")
    */
   async connect(accessToken: string): Promise<void> {
-    throw new Error("TODO: implement connect() — xem hướng dẫn ở TODO 1");
+    try {
+      this.connection = new signalR.HubConnectionBuilder()
+        .withUrl(`${import.meta.env.VITE_HUB_BASE_URL}/hubs`, {
+          accessTokenFactory: () => accessToken,
+        })
+        .withAutomaticReconnect()
+        .configureLogging(signalR.LogLevel.Information)
+        .build();
+
+      this.connection.onreconnecting((error) =>
+        this.stateHandler?.(signalR.HubConnectionState.Reconnecting),
+      );
+      this.connection.onreconnected((error) =>
+        this.stateHandler?.(signalR.HubConnectionState.Connected),
+      );
+      this.connection.onclose((error) =>
+        this.stateHandler?.(signalR.HubConnectionState.Disconnected),
+      );
+      await this.connection.start();
+    } catch (error) {
+      throw new Error(`Kết nối SignalR thất bại: ${(error as Error).message}`);
+    }
   }
 
   /**
@@ -69,7 +95,14 @@ class SignalRService {
    * sau khi stop để tránh giữ tham chiếu tới 1 connection đã chết.
    */
   async disconnect(): Promise<void> {
-    throw new Error("TODO: implement disconnect() — xem hướng dẫn ở TODO 2");
+    try {
+      await this.connection?.stop();
+      this.connection = null;
+    } catch (error) {
+      throw new Error(
+        `Ngắt kết nối SignalR thất bại: ${(error as Error).message}`,
+      );
+    }
   }
 
   /**
@@ -83,7 +116,11 @@ class SignalRService {
    * cần cài đặt logic thật ở đây).
    */
   async joinRoom(roomId: string): Promise<void> {
-    throw new Error("TODO: implement joinRoom() — xem hướng dẫn ở TODO 3");
+    try {
+      await this.connection?.invoke("JoinRoom", roomId);
+    } catch (error) {
+      throw new Error(`Gia nhập phòng thất bại: ${(error as Error).message}`);
+    }
   }
 
   /**
@@ -99,7 +136,11 @@ class SignalRService {
    * trừ khi bạn chủ động muốn làm thêm phần đó sau này.
    */
   async sendMessage(request: SendMessageRequest): Promise<void> {
-    throw new Error("TODO: implement sendMessage() — xem hướng dẫn ở TODO 4");
+    try {
+      await this.connection?.invoke("SendMessage", request);
+    } catch (error) {
+      throw new Error(`Gửi tin nhắn thất bại: ${(error as Error).message}`);
+    }
   }
 
   /**
@@ -112,7 +153,14 @@ class SignalRService {
    * + SignalR: mở DevTools sẽ thấy 1 tin nhắn hiện ra N lần nếu quên unsubscribe).
    */
   onReceiveMessage(handler: ReceiveMessageHandler): () => void {
-    throw new Error("TODO: implement onReceiveMessage() — xem hướng dẫn ở TODO 5");
+    try {
+      this.connection?.on("ReceiveMessage", handler);
+      return () => {
+        this.connection?.off("ReceiveMessage", handler);
+      };
+    } catch (error) {
+      throw new Error(`Nhận tin nhắn thất bại: ${(error as Error).message}`);
+    }
   }
 
   /**
@@ -130,7 +178,23 @@ class SignalRService {
    * Đừng quên trả về hàm unsubscribe gỡ CẢ 2 listener.
    */
   onOnlineStatusChanged(handler: OnlineStatusHandler): () => void {
-    throw new Error("TODO: implement onOnlineStatusChanged() — xem hướng dẫn ở TODO 6");
+    try {
+      const onlineHandler = (userId: string) =>
+        handler({ userId, isOnline: true });
+      const offlineHandler = (userId: string) =>
+        handler({ userId, isOnline: false });
+
+      this.connection?.on("OnUserOnline", onlineHandler);
+      this.connection?.on("OnUserOffline", offlineHandler);
+      return () => {
+        this.connection?.off("OnUserOnline", onlineHandler);
+        this.connection?.off("OnUserOffline", offlineHandler);
+      };
+    } catch (error) {
+      throw new Error(
+        `Thay đổi trạng thái online thất bại: ${(error as Error).message}`,
+      );
+    }
   }
 
   /**
@@ -142,7 +206,16 @@ class SignalRService {
    * cho người dùng thay vì để họ chỉ thấy "mất kết nối" không rõ lý do.
    */
   onConnectionError(handler: ConnectionErrorHandler): () => void {
-    throw new Error("TODO: implement onConnectionError() — xem hướng dẫn ở TODO 7");
+    try {
+      this.connection?.on("OnConnectionError", handler);
+      return () => {
+        this.connection?.off("OnConnectionError", handler);
+      };
+    } catch (error) {
+      throw new Error(
+        `Lắng nghe lỗi kết nối thất bại: ${(error as Error).message}`,
+      );
+    }
   }
 
   /**
@@ -155,7 +228,16 @@ class SignalRService {
    * đúng state vào).
    */
   onConnectionStateChanged(handler: ConnectionStateHandler): () => void {
-    throw new Error("TODO: implement onConnectionStateChanged() — xem hướng dẫn ở TODO 8");
+    try {
+      this.stateHandler = handler;
+      return () => {
+        this.stateHandler = null;
+      };
+    } catch (error) {
+      throw new Error(
+        `Lắng nghe trạng thái kết nối thất bại: ${(error as Error).message}`,
+      );
+    }
   }
 }
 
