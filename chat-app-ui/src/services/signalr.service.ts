@@ -64,6 +64,10 @@ class SignalRService {
    */
   async connect(accessToken: string): Promise<void> {
     try {
+      if (this.connection) {
+        await this.connection.stop();
+      }
+
       this.connection = new signalR.HubConnectionBuilder()
         .withUrl(`${import.meta.env.VITE_HUB_BASE_URL}/hubs`, {
           accessTokenFactory: () => accessToken,

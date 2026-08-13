@@ -4,11 +4,9 @@ import type { MessageDto, RoomSummary } from "../types/chat.types";
 // Khi bạn wire xong hooks/useSignalR.ts + service thật, hãy xoá import các
 // hàm này khỏi ChatContext và thay bằng dữ liệu thật load từ REST API / hub.
 
-export const CURRENT_USER_ID = "11111111-1111-1111-1111-111111111111";
-
 export const mockRooms: RoomSummary[] = [
   {
-    id: "room-1",
+    id: "962ef432-647f-423e-9051-3534e3280166",
     name: "Lê Phạm Hoàng Long",
     type: "Direct",
     avatarUrl: null,
@@ -16,7 +14,7 @@ export const mockRooms: RoomSummary[] = [
     isMemberOnline: true,
     lastMessage: {
       id: "msg-3",
-      roomId: "room-1",
+      roomId: "962ef432-647f-423e-9051-3534e3280166",
       sender: { id: "user-2", username: "Long" },
       content: "Mai deploy thử lên server nhé",
       messageType: "Text",
@@ -53,7 +51,7 @@ export const mockMessagesByRoom: Record<string, MessageDto[]> = {
     {
       id: "msg-2",
       roomId: "room-1",
-      sender: { id: CURRENT_USER_ID, username: "Bạn" },
+      sender: { id: "user-1", username: "Bạn" },
       content: "Ổn rồi, JWT qua query string chạy ngon",
       messageType: "Text",
       sentAt: new Date(Date.now() - 15 * 60_000).toISOString(),

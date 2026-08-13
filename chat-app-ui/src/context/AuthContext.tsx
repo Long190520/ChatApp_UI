@@ -10,9 +10,21 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from "re
  * lấy accessToken từ đó truyền xuống.
  */
 
-interface AuthContextValue {
+interface AuthContext {
+  user: UserContext | null;
   accessToken: string | null;
-  setAccessToken: (token: string | null) => void;
+}
+
+interface UserContext {
+  id: string,
+  username: string,
+  email: string,
+  avatarUrl: string | null
+}
+
+interface AuthContextValue {
+  authContext: AuthContext | null;
+  setAuthContext: (authContext: AuthContext | null) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -21,20 +33,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // TODO: thay bằng token thật lấy từ hệ thống auth bạn đã build.
   // Tạm thời đọc từ localStorage để bạn có thể tự set tay lúc test:
   //   localStorage.setItem("accessToken", "<token bạn copy từ Postman/response Login>")
-  const [accessToken, setAccessToken] = useState<string | null>(
-    () => localStorage.getItem("accessToken"),
+  const [authContext, setAuthContext] = useState<AuthContext | null>(
+    () => {
+      var cxtStr = localStorage.getItem("authContext") ?? "";
+      try {
+        return JSON.parse(cxtStr) as AuthContext;
+      } catch {
+        return null;
+      }
+    },
   );
 
   const value = useMemo(
     () => ({
-      accessToken,
-      setAccessToken: (token: string | null) => {
-        setAccessToken(token);
-        if (token) localStorage.setItem("accessToken", token);
-        else localStorage.removeItem("accessToken");
+      authContext,
+      setAuthContext: (authContext: AuthContext | null) => {
+        setAuthContext(authContext);
+        if (authContext) localStorage.setItem("authContext", JSON.stringify(authContext));
+        else localStorage.removeItem("authContext");
       },
     }),
-    [accessToken],
+    [authContext],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

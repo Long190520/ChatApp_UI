@@ -12,7 +12,7 @@ import type {
   MessageType,
   RoomSummary,
 } from "../types/chat.types";
-import { mockMessagesByRoom, mockRooms, CURRENT_USER_ID } from "../data/mockData";
+import { mockMessagesByRoom, mockRooms } from "../data/mockData";
 import { signalRService } from "../services/signalr.service";
 import { useAuth } from "./AuthContext";
 
@@ -89,7 +89,7 @@ interface ChatContextValue extends ChatState {
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
 
 export function ChatProvider({ children }: { children: ReactNode }) {
-  const { accessToken } = useAuth();
+  const { authContext } = useAuth();
 
   const [state, dispatch] = useReducer(chatReducer, {
     rooms: mockRooms,
@@ -106,7 +106,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // mà KHÔNG cần sửa gì ở ChatContext hay UI components.
   // ------------------------------------------------------------------
   useEffect(() => {
-    if (!accessToken) return;
+    if (!authContext?.accessToken || !authContext?.user) return;
 
     let unsubscribeMessage: (() => void) | undefined;
     let unsubscribeOnlineStatus: (() => void) | undefined;
@@ -115,7 +115,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         dispatch({ type: "CONNECTION_STATUS_CHANGED", status: "connecting" });
-        await signalRService.connect(accessToken);
+        await signalRService.connect(authContext.accessToken!);
         dispatch({ type: "CONNECTION_STATUS_CHANGED", status: "connected" });
 
         unsubscribeMessage = signalRService.onReceiveMessage((message) =>
@@ -149,7 +149,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       unsubscribeConnectionState?.();
       signalRService.disconnect().catch(() => {});
     };
-  }, [accessToken]);
+  }, [authContext?.accessToken]);
 
   const selectRoom = useCallback((roomId: string) => {
     dispatch({ type: "SELECT_ROOM", roomId });
@@ -179,7 +179,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           message: {
             id: crypto.randomUUID(),
             roomId: state.activeRoomId!,
-            sender: { id: CURRENT_USER_ID, username: "Bạn" },
+            sender: { id: authContext?.user?.id ?? "", username: authContext?.user?.username ?? "" },
             content,
             messageType,
             sentAt: new Date().toISOString(),
@@ -196,7 +196,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   return (
     <ChatContext.Provider
-      value={{ ...state, activeMessages, currentUserId: CURRENT_USER_ID, selectRoom, sendMessage }}
+      value={{ ...state, activeMessages, currentUserId: authContext?.user?.id ?? "", selectRoom, sendMessage }}
     >
       {children}
     </ChatContext.Provider>
