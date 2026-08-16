@@ -1,10 +1,6 @@
 @import "tailwindcss";
 
 @theme {
-  /* ---- Palette: "network console" theme ----
-     Sidebar: deep ink-indigo. Canvas: cool paper white.
-     Accent: signal violet (own messages / primary actions).
-     Live: amber for online/presence pulses. */
   --color-ink-950: #14131f;
   --color-ink-900: #1b1a2b;
   --color-ink-800: #262439;
@@ -41,7 +37,6 @@ body {
   color: var(--color-ink-900);
 }
 
-/* subtle scrollbar, matches the console feel without being loud */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--color-paper-200) transparent;

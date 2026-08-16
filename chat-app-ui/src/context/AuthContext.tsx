@@ -1,56 +1,44 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
-
-/**
- * Placeholder cho hệ thống auth bạn đã tự implement (login/logout/refresh...).
- * File này CHỈ cung cấp đúng 1 thứ mà phần SignalR cần: accessToken hiện tại.
- *
- * Cách wire vào auth thật của bạn: thay `useState` bên dưới bằng cách đọc
- * token từ nơi bạn đang lưu nó thật sự (context/store hiện có của bạn), hoặc
- * đơn giản là render <AuthProvider> lồng bên trong provider auth thật và
- * lấy accessToken từ đó truyền xuống.
- */
+import type { AuthUser } from "../types/auth.types";
 
 interface AuthContext {
-  user: UserContext | null;
+  user: AuthUser | null;
   accessToken: string | null;
-}
-
-interface UserContext {
-  id: string,
-  username: string,
-  email: string,
-  avatarUrl: string | null
 }
 
 interface AuthContextValue {
   authContext: AuthContext | null;
   setAuthContext: (authContext: AuthContext | null) => void;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+function readAuthContextFromStorage(): AuthContext | null {
+  const cxtStr = localStorage.getItem("authContext") ?? "";
+  try {
+    return JSON.parse(cxtStr) as AuthContext;
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // TODO: thay bằng token thật lấy từ hệ thống auth bạn đã build.
-  // Tạm thời đọc từ localStorage để bạn có thể tự set tay lúc test:
-  //   localStorage.setItem("accessToken", "<token bạn copy từ Postman/response Login>")
-  const [authContext, setAuthContext] = useState<AuthContext | null>(
-    () => {
-      var cxtStr = localStorage.getItem("authContext") ?? "";
-      try {
-        return JSON.parse(cxtStr) as AuthContext;
-      } catch {
-        return null;
-      }
-    },
+  const [authContext, setAuthContextState] = useState<AuthContext | null>(
+    readAuthContextFromStorage,
   );
 
-  const value = useMemo(
+  const value = useMemo<AuthContextValue>(
     () => ({
       authContext,
-      setAuthContext: (authContext: AuthContext | null) => {
-        setAuthContext(authContext);
-        if (authContext) localStorage.setItem("authContext", JSON.stringify(authContext));
+      setAuthContext: (next: AuthContext | null) => {
+        setAuthContextState(next);
+        if (next) localStorage.setItem("authContext", JSON.stringify(next));
         else localStorage.removeItem("authContext");
+      },
+      logout: () => {
+        setAuthContextState(null);
+        localStorage.removeItem("authContext");
       },
     }),
     [authContext],

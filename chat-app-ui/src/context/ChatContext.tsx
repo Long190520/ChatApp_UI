@@ -99,12 +99,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     connectionStatus: "disconnected",
   });
 
-  // ------------------------------------------------------------------
-  // Wiring tới SignalR — hiện service đang là TODO nên các lệnh này sẽ
-  // throw. Bọc try-catch để app không crash trong lúc bạn đang xây dần;
-  // khi bạn implement xong signalr.service.ts, phần này sẽ tự chạy đúng
-  // mà KHÔNG cần sửa gì ở ChatContext hay UI components.
-  // ------------------------------------------------------------------
   useEffect(() => {
     if (!authContext?.accessToken || !authContext?.user) return;
 
@@ -135,10 +129,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             }),
         );
       } catch (err) {
-        // Mong đợi: bạn sẽ thấy lỗi "TODO: implement connect()..." ở đây
-        // cho tới khi bạn hoàn thiện signalr.service.ts — đây là hành vi
-        // có chủ đích, không phải bug.
-        console.warn("[SignalR] Chưa được implement:", (err as Error).message);
+        console.warn("[SignalR] Lỗi kết nối:", (err as Error).message);
         dispatch({ type: "CONNECTION_STATUS_CHANGED", status: "disconnected" });
       }
     })();
@@ -153,9 +144,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const selectRoom = useCallback((roomId: string) => {
     dispatch({ type: "SELECT_ROOM", roomId });
-    signalRService.joinRoom(roomId).catch((err) =>
-      console.warn("[SignalR] joinRoom chưa được implement:", (err as Error).message),
-    );
+    signalRService
+      .joinRoom(roomId)
+      .catch((err) =>
+        console.warn("[SignalR] joinRoom lỗi:", (err as Error).message),
+      );
   }, []);
 
   const sendMessage = useCallback(
@@ -168,18 +161,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           content,
           messageType,
         });
-        // Không tự thêm message vào state ở đây — tin nhắn sẽ tới qua
-        // event "ReceiveMessage" (kể cả cho chính người gửi), đúng luồng
-        // đã thiết kế ở backend.
       } catch (err) {
-        console.warn("[SignalR] sendMessage chưa được implement:", (err as Error).message);
-        // Fallback tạm thời để bạn vẫn thấy UI hoạt động trước khi wire xong:
+        console.warn("[SignalR] sendMessage lỗi:", (err as Error).message);
         dispatch({
           type: "MESSAGE_RECEIVED",
           message: {
             id: crypto.randomUUID(),
             roomId: state.activeRoomId!,
-            sender: { id: authContext?.user?.id ?? "", username: authContext?.user?.username ?? "" },
+            sender: {
+              id: authContext?.user?.id ?? "",
+              username: authContext?.user?.username ?? "",
+            },
             content,
             messageType,
             sentAt: new Date().toISOString(),
@@ -187,7 +179,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         });
       }
     },
-    [state.activeRoomId],
+    [state.activeRoomId, authContext?.user],
   );
 
   const activeMessages = state.activeRoomId
@@ -196,7 +188,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   return (
     <ChatContext.Provider
-      value={{ ...state, activeMessages, currentUserId: authContext?.user?.id ?? "", selectRoom, sendMessage }}
+      value={{
+        ...state,
+        activeMessages,
+        currentUserId: authContext?.user?.id ?? "",
+        selectRoom,
+        sendMessage,
+      }}
     >
       {children}
     </ChatContext.Provider>

@@ -1,5 +1,6 @@
-import { MessageCircleMore } from "lucide-react";
+import { LogOut, MessageCircleMore } from "lucide-react";
 import { useChat } from "../../context/ChatContext";
+import { useAuth } from "../../context/AuthContext";
 import { ConnectionStatus } from "./ConnectionStatus";
 
 function initials(name: string) {
@@ -22,7 +23,9 @@ function timeAgo(iso: string) {
 }
 
 export function Sidebar() {
-  const { rooms, activeRoomId, selectRoom, onlineUserIds, connectionStatus } = useChat();
+  const { rooms, activeRoomId, selectRoom, onlineUserIds, connectionStatus } =
+    useChat();
+  const { authContext, logout } = useAuth();
 
   return (
     <aside className="flex h-full w-80 shrink-0 flex-col bg-ink-950 text-paper-50">
@@ -35,11 +38,29 @@ export function Sidebar() {
             ChatApp
           </span>
         </div>
+        <button
+          onClick={logout}
+          title="Đăng xuất"
+          className="rounded-lg p-1.5 text-ink-600 hover:bg-ink-800 hover:text-paper-50"
+        >
+          <LogOut size={16} />
+        </button>
       </div>
 
       <div className="px-5 pb-4">
         <ConnectionStatus status={connectionStatus} />
       </div>
+
+      {authContext?.user && (
+        <div className="mx-5 mb-4 flex items-center gap-2 rounded-xl bg-ink-900 px-3 py-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-signal-500 text-xs font-semibold">
+            {initials(authContext.user.username)}
+          </div>
+          <span className="truncate text-sm text-paper-100">
+            {authContext.user.username}
+          </span>
+        </div>
+      )}
 
       <div className="px-5 pb-2 font-mono text-[11px] uppercase tracking-wider text-ink-600">
         Conversations

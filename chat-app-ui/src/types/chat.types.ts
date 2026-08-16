@@ -1,6 +1,3 @@
-// Khớp 1-1 với các DTO C# đã thiết kế ở backend (ChatHub, MessageDto, SenderDto...).
-// Giữ types đồng bộ với backend giúp bạn phát hiện lệch dữ liệu ngay lúc code, không phải lúc chạy.
-
 export type MessageType = "Text" | "Image" | "File" | "System";
 
 export interface SenderDto {
